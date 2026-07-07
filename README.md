@@ -19,6 +19,16 @@
 
 本 Skill 面向 macOS 优先使用；Linux 仅做已有安装检测、Vault 扫描和官网安装引导。不提供 Windows 自动流程。
 
+## 使用方式
+
+在支持 Skill 的 Agent 环境中，将本目录放入对应的 skills 目录后，可以这样调用：
+
+```text
+使用 obsidian-manage 帮我搭建或整理本地 Obsidian 知识库。
+```
+
+Agent 应先读取 `SKILL.md`，需要详细规则时再读取 `references/vault-rules.md`。
+
 ## 默认目录模板
 
 默认模板只是提案，不是强制规则。创建或改造知识库前，Agent 应该先展示目录方案，让用户确认。用户可以重命名、新增、删除或调整任意目录。
@@ -150,25 +160,3 @@ obsidian-manage/
 └── scripts/
     └── vault_index.py
 ```
-
-## 使用方式
-
-在支持 Skill 的 Agent 环境中，将本目录放入对应的 skills 目录后，可以这样调用：
-
-```text
-Use $obsidian-manage to build or organize my local Obsidian vault.
-```
-
-Agent 应先读取 `SKILL.md`，需要详细规则时再读取 `references/vault-rules.md`。
-
-## 发布前检查
-
-建议发布前运行：
-
-```bash
-python3 scripts/vault_index.py --detect-app
-python3 scripts/vault_index.py --find-vaults --search-root /path/to/search
-python3 scripts/vault_index.py --vault /path/to/vault --check-dates
-```
-
-如果要公开分享本 Skill，还应确认仓库中没有个人姓名、绝对用户路径、密钥或私有项目资料。
