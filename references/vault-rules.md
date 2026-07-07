@@ -110,6 +110,7 @@ Users can rename, add, remove, or reorder any area before the agent creates or c
 
 - Directories should be numbered: `两位数-名称/`.
 - Formal notes usually use `两位数-中文.md`, allowing product/tool names such as `AI`, `CLI`, `SQL`, `Dify`, etc. when they are part of the real topic.
+- Same-topic files in different formats should share the same two-digit sequence number, for example `03-项目简历.md` and `03-项目简历.docx`.
 - Drafts: `YYYY-MM-DD-主题.md`.
 - Plans/retrospectives: `YYYY-MM-DD-周复盘.md` or `YYYY-MM-月计划.md`.
 - Do not add unnumbered directories unless the user explicitly asks.
@@ -141,6 +142,8 @@ After the date block, formal notes should usually have:
 ```
 
 Use `相关入口` for the first-level navigation page and `相关文档` for sibling/topic links.
+
+When same-topic files exist in different formats, link them to each other explicitly. For example, the Markdown note should link to the source or companion file, and the source-derived Markdown should keep a visible reference back to the original file path/name when practical.
 
 ## JSONL Index Files
 

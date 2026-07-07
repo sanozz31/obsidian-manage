@@ -17,6 +17,7 @@ NUMBERED_DIR_RE = re.compile(r"^\d{2}-.+")
 NAV_NOTE_RE = re.compile(r"^00-.+说明\.md$")
 INDEX_MANIFEST = "00-obsidian-manage-index-manifest.json"
 INDEX_FILE_RE = re.compile(r"^\d{2}-.+索引\.jsonl$")
+INDEX_POSITION_RE = re.compile(r"^(\d{2})-.+索引\.jsonl$")
 INDEX_RECORD_KEYS = {"date", "path", "title", "area", "type", "status"}
 
 
@@ -101,18 +102,91 @@ def area_sort_key(area: str) -> tuple[int, str]:
 
 def index_file_name(position: int, area: str) -> str:
     if area == "all":
-        return "01-全库索引.jsonl"
+        return f"{position:02d}-全库索引.jsonl"
     clean = re.sub(r"^[0-9]+-", "", area).strip() or area
     clean = re.sub(r"[\\/:*?\"<>|]", "-", clean)
     return f"{position:02d}-{clean}索引.jsonl"
 
 
-def infer_index_paths(vault: Path, records: list[dict[str, str]], idx_dir: Path) -> dict[str, Path]:
+def index_file_suffix(area: str) -> str:
+    if area == "all":
+        return "全库索引.jsonl"
+    clean = re.sub(r"^[0-9]+-", "", area).strip() or area
+    clean = re.sub(r"[\\/:*?\"<>|]", "-", clean)
+    return f"{clean}索引.jsonl"
+
+
+def managed_index_path(idx_dir: Path, managed_names: set[str], area: str) -> Path | None:
+    suffix = index_file_suffix(area)
+    matches = sorted(name for name in managed_names if INDEX_POSITION_RE.match(name) and name[3:] == suffix)
+    if matches:
+        return idx_dir / matches[0]
+    return None
+
+
+def index_position(name: str) -> int | None:
+    match = INDEX_POSITION_RE.match(name)
+    if not match:
+        return None
+    return int(match.group(1))
+
+
+def existing_index_positions(idx_dir: Path) -> set[int]:
+    if not idx_dir.exists():
+        return set()
+    positions = set()
+    for path in idx_dir.glob("*.jsonl"):
+        position = index_position(path.name)
+        if position is not None:
+            positions.add(position)
+    return positions
+
+
+def reserve_index_path(path: Path, reserved_names: set[str], reserved_positions: set[int]) -> None:
+    reserved_names.add(path.name)
+    position = index_position(path.name)
+    if position is not None:
+        reserved_positions.add(position)
+
+
+def unused_index_path(
+    idx_dir: Path,
+    position: int,
+    area: str,
+    reserved_names: set[str],
+    reserved_positions: set[int],
+    managed_names: set[str],
+) -> Path:
+    candidate_position = position
+    while True:
+        name = index_file_name(candidate_position, area)
+        position_available = candidate_position not in reserved_positions
+        name_available = name not in reserved_names
+        path_available = name in managed_names or not (idx_dir / name).exists()
+        if position_available and name_available and path_available:
+            path = idx_dir / name
+            reserve_index_path(path, reserved_names, reserved_positions)
+            return path
+        candidate_position += 1
+
+
+def infer_index_paths(records: list[dict[str, str]], idx_dir: Path, managed_names: set[str]) -> dict[str, Path]:
     areas = sorted({rec["area"] for rec in records}, key=area_sort_key)
-    paths = {"all": idx_dir / index_file_name(1, "all")}
+    reserved_names: set[str] = set()
+    reserved_positions = existing_index_positions(idx_dir)
+    all_path = managed_index_path(idx_dir, managed_names, "all")
+    if all_path:
+        reserve_index_path(all_path, reserved_names, reserved_positions)
+    else:
+        all_path = unused_index_path(idx_dir, 1, "all", reserved_names, reserved_positions, managed_names)
+    paths = {"all": all_path}
     for offset, area in enumerate(areas, start=2):
-        existing = sorted(idx_dir.glob(f"*-{re.sub(r'^[0-9]+-', '', area)}索引.jsonl")) if idx_dir.exists() else []
-        paths[area] = existing[0] if existing else idx_dir / index_file_name(offset, area)
+        managed_path = managed_index_path(idx_dir, managed_names, area)
+        if managed_path and managed_path.name not in reserved_names:
+            reserve_index_path(managed_path, reserved_names, reserved_positions)
+            paths[area] = managed_path
+            continue
+        paths[area] = unused_index_path(idx_dir, offset, area, reserved_names, reserved_positions, managed_names)
     return paths
 
 
@@ -185,10 +259,11 @@ def write_manifest(idx_dir: Path, index_paths: dict[str, Path], date: str) -> No
 def rebuild_index(vault: Path, date: str, index_dir: str | None = None, allow_external_index_dir: bool = False) -> None:
     records = [make_record(vault, md, date) for md in iter_markdown(vault)]
     idx_dir = index_dir_for(vault, index_dir, allow_external_index_dir)
-    index_paths = infer_index_paths(vault, records, idx_dir)
+    managed_names = read_manifest(idx_dir)
+    index_paths = infer_index_paths(records, idx_dir, managed_names)
     idx_dir.mkdir(parents=True, exist_ok=True)
     current_names = {path.name for path in index_paths.values()}
-    old_generated_names = read_manifest(idx_dir) | stale_generated_indexes(idx_dir, current_names)
+    old_generated_names = managed_names | stale_generated_indexes(idx_dir, current_names)
     idx_root = idx_dir.resolve(strict=False)
     for old_name in old_generated_names - current_names:
         safe_name = safe_manifest_name(old_name)

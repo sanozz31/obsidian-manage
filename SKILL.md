@@ -131,12 +131,13 @@ Use this module when the user asks to import, move, rename, convert, or organize
 3. Explain the intended destination and any renames before broad or ambiguous moves.
 4. Move/import files only after user approval when the operation is broad or ambiguous.
 5. Normalize directory and file names to the vault naming style unless the user explicitly wants original names preserved.
-6. Preserve user-authored body content. Prefer adding metadata/link blocks and changing paths over rewriting prose.
-7. Add or update the date block, `相关入口`, and useful sibling/topic `相关文档` links.
-8. Clean obvious converter artifacts such as `\.`, `\-`, `\+`, `\_`, escaped brackets, and HTML conversion comments, but avoid altering code blocks unless necessary.
-9. Update the relevant first-level navigation page.
-10. Rebuild JSONL indexes or append an index record as appropriate.
-11. Verify old paths are gone and new Obsidian links/index entries resolve.
+6. When two files share the same topic/title but have different formats, keep the same two-digit sequence number, for example `03-项目简历.md` and `03-项目简历.docx`.
+7. Preserve user-authored body content. Prefer adding metadata/link blocks and changing paths over rewriting prose.
+8. Add or update the date block, `相关入口`, and useful sibling/topic `相关文档` links. For same-topic files in different formats, add explicit links between the Markdown note and the source/companion file.
+9. Clean obvious converter artifacts such as `\.`, `\-`, `\+`, `\_`, escaped brackets, and HTML conversion comments, but avoid altering code blocks unless necessary.
+10. Update the relevant first-level navigation page.
+11. Rebuild JSONL indexes or append an index record as appropriate.
+12. Verify old paths are gone and new Obsidian links/index entries resolve.
 
 ## Module 7: Navigation And Link Maintenance
 
@@ -148,6 +149,7 @@ Use this module when maintaining directory descriptions, entry links, sibling li
 - Use Obsidian double links, for example `[[05-职业材料/00-职业材料说明|职业材料]]`.
 - `相关入口` links upward to the first-level navigation page.
 - `相关文档` links sideways to sibling or topic-group notes.
+- Same-topic files with different formats must share the same two-digit sequence number and link to each other.
 - When moving or renaming notes, update affected Obsidian links and navigation entries.
 
 ## Module 8: Index And Audit Maintenance

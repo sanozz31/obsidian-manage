@@ -54,6 +54,7 @@ Agent 应先读取 `SKILL.md`，需要详细规则时再读取 `references/vault
 - 用户已有内容优先于模板。
 - 文件系统是真实来源，JSONL 索引只是辅助。
 - Obsidian App 检测和 Vault 检测是两件事：App 是否安装不能决定 Vault 是否存在。
+- 同主题不同格式文件应使用相同两位数序号，并在 Markdown 与源文件/伴随文件之间建立链接。
 
 ## 模块化流程
 
