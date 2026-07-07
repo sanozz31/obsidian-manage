@@ -164,7 +164,7 @@ Record shape:
 {"date":"2026-07-07","path":"05-职业材料/01-面试准备/01-岗位分析.md","title":"01-岗位分析","area":"05-职业材料","type":"note","status":"active"}
 ```
 
-The filesystem is the source of truth. Rebuild indexes when paths have changed a lot.
+The filesystem is the source of truth. Rebuild indexes when paths have changed a lot. Rebuilds should overwrite only the index files generated for the current vault and should not clear unrelated user-created JSONL files in the same folder.
 
 ## Routing Reminders
 

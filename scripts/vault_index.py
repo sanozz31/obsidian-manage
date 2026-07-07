@@ -14,6 +14,8 @@ from pathlib import Path
 
 DATE_RE = re.compile(r"^\n```text\n最后修改日期：\d{4}-\d{2}-\d{2}\n```\n\n", re.M)
 SKIP_DIRS = {".git", ".hg", ".svn", ".obsidian", "node_modules", "Library", "Applications", "System", "Volumes"}
+NUMBERED_DIR_RE = re.compile(r"^\d{2}-.+")
+NAV_NOTE_RE = re.compile(r"^00-.+说明\.md$")
 
 
 def iter_markdown(vault: Path):
@@ -83,8 +85,6 @@ def rebuild_index(vault: Path, date: str) -> None:
     index_paths = infer_index_paths(vault, records)
     idx_dir = index_dir_for(vault)
     idx_dir.mkdir(parents=True, exist_ok=True)
-    for old in idx_dir.glob("*.jsonl"):
-        old.write_text("", encoding="utf-8")
     for path in index_paths.values():
         path.write_text("", encoding="utf-8")
 
@@ -126,7 +126,7 @@ def detect_obsidian_app() -> list[str]:
         if mdfind:
             output = run_quiet([mdfind, "kMDItemCFBundleIdentifier == 'md.obsidian'"])
             found.extend([line for line in output.splitlines() if line])
-    else:
+    elif system == "linux":
         which = shutil.which("obsidian")
         if which:
             found.append(which)
@@ -157,8 +157,12 @@ def install_obsidian_app(yes_install: bool) -> int:
         return 0
     command = install_command()
     if not command:
+        system = platform.system().lower()
         print("No automatic Obsidian install command is available.")
-        print("If this is macOS, install Homebrew first or install Obsidian manually.")
+        if system not in {"darwin", "linux"}:
+            print(f"Unsupported platform for this skill's automatic setup: {platform.system()}.")
+        print("On macOS, install Homebrew first or install Obsidian manually.")
+        print("On Linux, use the official download or your system package manager manually.")
         print("Official download: https://obsidian.md/download")
         print('After installing Obsidian, return to the conversation and tell the agent: "Obsidian is installed".')
         print("The agent should then rerun detection and continue the vault setup flow.")
@@ -180,16 +184,50 @@ def current_dir_signals(path: Path) -> tuple[int, list[str]]:
         score += 3
         signals.append("AGENTS.md")
     try:
-        direct_md = sum(1 for child in path.iterdir() if child.is_file() and child.suffix.lower() == ".md")
+        children = list(path.iterdir())
     except (OSError, PermissionError):
         return 0, []
+    direct_md = sum(1 for child in children if child.is_file() and child.suffix.lower() == ".md")
+    numbered_dirs = sum(1 for child in children if child.is_dir() and NUMBERED_DIR_RE.match(child.name))
+    nav_notes = sum(1 for child in children if child.is_file() and NAV_NOTE_RE.match(child.name))
     if direct_md >= 5:
-        score += 2
+        score += 3
         signals.append("5+ direct markdown files")
     elif direct_md > 0:
         score += 1
         signals.append(f"{direct_md} direct markdown file(s)")
+    if numbered_dirs >= 3:
+        score += 3
+        signals.append("3+ numbered first-level folders")
+    elif numbered_dirs > 0:
+        score += 2
+        signals.append(f"{numbered_dirs} numbered first-level folder(s)")
+    if nav_notes > 0:
+        score += 2
+        signals.append(f"{nav_notes} navigation note(s)")
+    nested_md = count_nested_markdown(path, limit=6)
+    if nested_md >= 5:
+        score += 3
+        signals.append("5+ nested markdown files")
+    elif nested_md > direct_md:
+        score += 1
+        signals.append("nested markdown files")
     return score, signals
+
+
+def count_nested_markdown(path: Path, limit: int) -> int:
+    count = 0
+    try:
+        iterator = path.rglob("*.md")
+        for md in iterator:
+            if any(part in SKIP_DIRS for part in md.parts):
+                continue
+            count += 1
+            if count >= limit:
+                break
+    except (OSError, PermissionError):
+        return 0
+    return count
 
 
 def find_vaults(search_roots: list[Path], max_depth: int, max_dirs: int) -> list[dict[str, object]]:
@@ -206,7 +244,8 @@ def find_vaults(search_roots: list[Path], max_depth: int, max_dirs: int) -> list
             score, signals = current_dir_signals(current)
             if score >= 3:
                 results[str(current)] = {"path": str(current), "score": score, "signals": signals}
-                continue
+                if current != root:
+                    continue
             if depth >= max_depth:
                 continue
             try:

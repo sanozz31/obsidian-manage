@@ -165,7 +165,7 @@ Index rebuild:
 python3 /path/to/obsidian-manage/scripts/vault_index.py --vault /path/to/vault --rebuild-index
 ```
 
-`--check-dates` is read-only. `--rebuild-index` rewrites JSONL index files under `00-系统规则/03-索引文件/`; explain before running it.
+`--check-dates` is read-only. `--rebuild-index` rewrites the JSONL index files generated for the current vault under `00-系统规则/03-索引文件/`, but must not clear unrelated user-created JSONL files; explain before running it.
 
 ## Required Formatting
 

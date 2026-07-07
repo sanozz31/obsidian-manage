@@ -135,6 +135,8 @@ python3 scripts/vault_index.py --vault /path/to/vault --check-dates
 python3 scripts/vault_index.py --vault /path/to/vault --rebuild-index
 ```
 
+重建索引只覆盖脚本为当前 Vault 生成的索引文件，不会清空同目录下用户自建的其他 JSONL 文件。
+
 ## Skill 文件结构
 
 ```text
