@@ -22,7 +22,7 @@ Suggested install behavior:
 
 - macOS with Obsidian already installed: report the detected app path.
 - macOS with Homebrew but no Obsidian: print `brew install --cask obsidian`; run it only with `--yes-install` and user approval.
-- macOS without Obsidian and without Homebrew: print `https://obsidian.md/download` and tell the user to install manually.
+- macOS without Obsidian and without Homebrew: print `https://obsidian.md/download`, tell the user to install manually, and treat this as a normal guidance result rather than a script failure.
 - Linux: detect existing installs best-effort, but default to the official download URL for installation guidance.
 
 ## Existing Vault Handling
@@ -57,7 +57,7 @@ For existing vaults, do not force the default template onto the current structur
 1. **Define the vault role**: decide whether it is mainly for work memory, study notes, projects, writing, research, personal planning, or an AI-readable operating system.
 2. **Design stable first-level areas**: 6-10 folders is usually enough. Prefer areas that will survive for years.
 3. **Create a vault constitution**: write `AGENTS.md` with safety rules, directory map, routing, naming, linking, and index policy.
-4. **Create first-level navigation pages**: one `00-...说明.md` per first-level area.
+4. **Create first-level navigation pages**: one `00-...说明.md` per first-level area. Write each page from the user's confirmed area purpose, allowed note types, exclusion rules, and actual or planned child topics. Avoid repeated generic descriptions.
 5. **Set naming rules early**: choose folder and note naming before importing lots of files.
 6. **Import in batches**: move one source folder/topic at a time, then normalize names, dates, links, navigation, and index.
 7. **Add indexes after structure stabilizes**: JSONL indexes are useful for agents but should not replace the filesystem.

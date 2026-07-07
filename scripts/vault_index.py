@@ -161,7 +161,7 @@ def install_obsidian_app(yes_install: bool) -> int:
         print("If this is macOS, install Homebrew first or install Obsidian manually.")
         print("Official download: https://obsidian.md/download")
         print("After installing Obsidian, rerun detection.")
-        return 2
+        return 0
     print("Install command:", " ".join(command))
     if not yes_install:
         print("Dry run only. Rerun with --yes-install to execute this command.")

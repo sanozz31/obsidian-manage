@@ -15,6 +15,10 @@
 - 检查 Markdown 日期头
 - 重建 JSONL 索引
 
+## 支持范围
+
+本 Skill 面向 macOS 优先使用；Linux 仅做已有安装检测、Vault 扫描和官网安装引导。不提供 Windows 自动流程。
+
 ## 默认目录模板
 
 默认模板只是提案，不是强制规则。创建或改造知识库前，Agent 应该先展示目录方案，让用户确认。用户可以重命名、新增、删除或调整任意目录。
@@ -83,6 +87,7 @@ https://obsidian.md/download
 ```
 
 不会自动从官网下载、挂载或安装 DMG。
+这个分支是正常的人工安装引导，不代表脚本执行失败。
 
 ```bash
 python3 scripts/vault_index.py --install-app

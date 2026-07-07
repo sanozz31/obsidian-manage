@@ -45,7 +45,7 @@ python3 /path/to/obsidian-manage/scripts/vault_index.py --find-vaults
 python3 /path/to/obsidian-manage/scripts/vault_index.py --find-vaults --search-root /path/to/search
 ```
 
-`--install-app` is a dry run by default. On macOS, if Obsidian is not installed and `brew` is available, it prints `brew install --cask obsidian`. Add `--yes-install` to actually run that command, after explicit user approval. If Obsidian and Homebrew are both missing, it prints the official download URL: `https://obsidian.md/download`. Do not auto-download DMG files from the website.
+`--install-app` is a dry run by default. On macOS, if Obsidian is not installed and `brew` is available, it prints `brew install --cask obsidian`. Add `--yes-install` to actually run that command, after explicit user approval. If Obsidian and Homebrew are both missing, it prints the official download URL: `https://obsidian.md/download` and exits successfully because manual installation guidance is the expected fallback. Do not auto-download DMG files from the website.
 
 ## New Vault vs Existing Vault
 
@@ -82,7 +82,7 @@ When the user asks to build a personal Obsidian knowledge base, design the syste
    - task routing
    - index maintenance
    - actions requiring confirmation
-5. Create only first-level navigation pages by default, such as `00-目录名说明.md`.
+5. Create only first-level navigation pages by default, such as `00-目录名说明.md`. Each page must be written from the confirmed directory name, purpose, allowed note types, exclusion rules, and actual or planned child topics. Do not create identical boilerplate directory descriptions.
 6. Add a lightweight index plan only after the folder system is stable.
 7. Import existing content in small batches, preserving original meaning and avoiding broad rewrites.
 
@@ -113,6 +113,7 @@ For a reusable vault template and detailed rules, read `references/vault-rules.m
 ### Maintain Navigation And Links
 
 - First-level navigation pages are the main table of contents for each area.
+- First-level navigation pages must reflect the user's confirmed area design. When an area is renamed, added, removed, or repurposed, update its description, allowed content, excluded content, links, and related rules instead of copying a generic template.
 - Do not create second-level README/index notes unless the user asks or the folder is large enough to need one.
 - Use Obsidian double links, for example `[[05-实习材料/00-实习材料说明|实习材料]]`.
 - `相关入口` links upward to the first-level navigation page.
