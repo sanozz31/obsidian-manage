@@ -5,76 +5,99 @@ description: Build, design, organize, import, rename, move, link, date-stamp, in
 
 # Obsidian Manage
 
-Use this skill to build and maintain a personal Obsidian knowledge vault without damaging user-authored notes. It works for a new vault design as well as ongoing maintenance of an existing vault.
+Use this skill to build and maintain a personal Obsidian knowledge vault without damaging user-authored notes. The skill is modular: always run the preflight module first, then route to only the module needed for the user's current request.
 
-## Operating Principles
+## Module Router
 
-1. Treat the user's current explicit instruction as highest priority.
-2. At the very start of first-time setup, run setup detection in this order: check the Obsidian app, prepare installation guidance if missing, then detect candidate vaults. App detection never decides whether a vault exists; vault detection decides whether to create a new vault or adapt an existing one. On macOS, if Obsidian is missing and Homebrew is available, the agent may offer a Homebrew install command. If both Obsidian and Homebrew are missing, give the user the official download URL instead of trying to download the app directly. Installing software must still use the current environment's approval mechanism; do not perform a silent install.
-3. Ask for or infer the vault root before acting. If multiple possible vaults exist, ask the user which one to use.
-4. If the vault already has `AGENTS.md`, read it before writing anything.
-5. If the vault has system/routing/index documents, read them before doing routing or index work.
-6. Inspect the real filesystem before relying on JSONL indexes. The filesystem is the source of truth.
-7. If writing outside the current workspace or protected paths, ask for permission or use the available approval mechanism with a clear user-facing justification.
+1. **Preflight And Routing**: run at the start of every task.
+2. **Install Or Resume Obsidian**: use when Obsidian is missing or the user says they installed it.
+3. **Select Or Create Vault**: use when the vault root is unknown, new, or ambiguous.
+4. **New Vault Design**: use for first-time vault creation after the vault target is confirmed empty or absent.
+5. **Existing Vault Improvement**: use when a vault or meaningful Markdown content already exists.
+6. **Import And Normalize Materials**: use for moving, renaming, converting, linking, and date-stamping notes.
+7. **Navigation And Link Maintenance**: use for directory descriptions, entry links, sibling links, and broken/stale links.
+8. **Index And Audit Maintenance**: use for date checks, JSONL rebuilds, and consistency audits.
 
-## Safety Rules
+Do not run a full setup flow when a later module is enough. Example: if the user asks to rebuild indexes for a known vault, run preflight, read the vault rules if present, then use Index And Audit Maintenance.
 
-- Do not create, move, rename, delete, merge, split, or bulk-edit files unless the user clearly asked for that action or approved the plan.
-- Before modifying an existing Markdown file, reread its current content.
-- Preserve user-authored body content. Prefer adding metadata/link blocks and changing paths over rewriting prose.
-- Never delete user material automatically. Only remove obvious system metadata such as `.DS_Store` when it is part of a user-approved import/cleanup.
-- Ask before changing `AGENTS.md`, system-rule folders, index structure, or top-level vault directories unless the user explicitly requested it.
+## Module 1: Preflight And Routing
 
-## Detect Obsidian App And Existing Vaults
+Run this module before every action.
 
-When the user is unsure whether they already have Obsidian or a vault:
+1. Restate the user's current goal in one sentence.
+2. Determine whether the task is read-only or will modify files.
+3. Identify the vault root from the user's message, prior context, or candidate scan.
+4. If the vault root is known, inspect the real filesystem before relying on JSONL indexes.
+5. If the vault has `AGENTS.md`, read it before writing anything.
+6. If the vault has system/routing/index documents, read them before routing notes or rebuilding indexes.
+7. Choose exactly one next module unless the task clearly needs a sequence.
+8. If writing outside the current workspace or protected paths, ask for permission or use the available approval mechanism with a clear user-facing justification.
 
-1. Check the Obsidian app first so the user can install it if needed, but use vault detection to decide whether to create a new vault or adapt an existing one. A vault can exist without the app, and the app can exist without a vault.
-2. First ask for the intended vault path. If the user does not know it, scan common user folders for candidate vaults.
-3. Treat a folder as a candidate vault if it contains `.obsidian/`, `AGENTS.md`, or a meaningful collection of Markdown files.
-4. Detecting the Obsidian app is only auxiliary: use it to help the user understand local setup, not to decide whether a vault exists.
-5. If existing vaults are found, summarize them and ask the user which one to adapt before changing anything.
+Filesystem state is the source of truth. JSONL indexes are auxiliary.
 
-Use the bundled script for setup checks and installation guidance:
+## Module 2: Install Or Resume Obsidian
+
+Use this module when the user is setting up for the first time, is unsure whether Obsidian is installed, or says they have just installed it.
+
+1. Check the Obsidian app first:
 
 ```bash
 python3 /path/to/obsidian-manage/scripts/vault_index.py --detect-app
+```
+
+2. If Obsidian is installed, report the detected path and continue to Select Or Create Vault.
+3. If Obsidian is not installed, prepare installation guidance:
+
+```bash
 python3 /path/to/obsidian-manage/scripts/vault_index.py --install-app
+```
+
+4. On macOS, if `brew` is available, offer:
+
+```bash
+brew install --cask obsidian
+```
+
+Run the install only after explicit user approval:
+
+```bash
 python3 /path/to/obsidian-manage/scripts/vault_index.py --install-app --yes-install
+```
+
+5. If Obsidian and Homebrew are both missing, give the official download URL: `https://obsidian.md/download`. Tell the user clearly: after manual installation, return to the conversation and say "Obsidian is installed" so the agent can rerun detection and continue.
+6. Do not auto-download DMG files from the website.
+
+Detecting the app never decides whether a vault exists. Vault detection decides whether to create a new vault or adapt an existing one.
+
+## Module 3: Select Or Create Vault
+
+Use this module when the vault root is unknown, new, or ambiguous.
+
+1. Ask for the intended vault path if it is not known.
+2. If the user does not know the path, scan common user folders:
+
+```bash
 python3 /path/to/obsidian-manage/scripts/vault_index.py --find-vaults
 python3 /path/to/obsidian-manage/scripts/vault_index.py --find-vaults --search-root /path/to/search
 ```
 
-`--install-app` is a dry run by default. On macOS, if Obsidian is not installed and `brew` is available, it prints `brew install --cask obsidian`. Add `--yes-install` to actually run that command, after explicit user approval. If Obsidian and Homebrew are both missing, it prints the official download URL: `https://obsidian.md/download`, tells the user to return to the conversation after manual installation and say "Obsidian is installed", and exits successfully because manual installation guidance is the expected fallback. Do not auto-download DMG files from the website.
+3. Treat a folder as a candidate vault if it contains `.obsidian/`, `AGENTS.md`, first-level numbered note folders, navigation notes, or a meaningful collection of Markdown files.
+4. If multiple candidate vaults exist, summarize them and ask the user which one to use.
+5. If the target path already contains a vault or meaningful Markdown content, route to Existing Vault Improvement.
+6. If the target path is absent or empty, route to New Vault Design.
+7. When the user says "build a new knowledge base" but the target already has content, ask whether to adapt the existing vault, create a separate new vault, or stop.
 
-## New Vault vs Existing Vault
+## Module 4: New Vault Design
 
-Before creating a knowledge base, check whether the target path already exists and whether it contains an Obsidian vault (`.obsidian/`, `AGENTS.md`, or existing Markdown folders).
-
-- If no vault exists, propose a new-vault structure and wait for user confirmation before creating folders or rule files.
-- If a vault already exists, do not overwrite or recreate it. Treat the task as an existing-vault improvement: audit the current structure, propose incremental changes, and wait for explicit user confirmation before moving, renaming, deleting, or creating rule/navigation/index files.
-- When the user says “build a new knowledge base” but the target already has content, state that an existing vault was found and ask whether to adapt it, create a separate new vault, or stop.
-- Existing user content always wins over templates. Apply templates only as suggestions or incremental additions after confirmation.
-
-## User-Customizable Template
-
-Use the recommended structure as a default proposal, not a fixed requirement. Before creating or significantly modifying a vault:
-
-1. Present the proposed first-level directory map and key rules.
-2. Tell the user they can modify any single item, rename folders, add new areas, remove areas, or change naming/link/index rules.
-3. Apply only the confirmed version. If the user changes one part, keep the rest of the default template unless they say otherwise.
-4. For existing vaults, present changes as a diff-style proposal: keep, rename, add, remove, move. Do not apply the proposal until the user confirms.
-5. If a user asks for an addition/removal later, update the directory map, navigation pages, rules, and indexes consistently after confirmation.
-
-## Design A New Personal Vault
-
-When the user asks to build a personal Obsidian knowledge base, design the system before moving content.
+Use this module only after the target path is confirmed empty or absent.
 
 1. Clarify the vault's job: personal knowledge archive, AI working memory, project archive, study notes, writing system, research system, or mixed vault.
-2. Propose 6-10 stable first-level areas using the default template when appropriate. Explicitly invite the user to rename, add, remove, or adjust any area.
-3. Define each area's purpose, default note types, and what does not belong there; apply only the user-confirmed version.
-4. Draft `AGENTS.md` as the vault constitution:
-   - highest principles and write safety
+2. Present the default first-level directory map as an editable proposal, not a fixed requirement.
+3. Tell the user they can rename any area, add areas, remove areas, reorder areas, or change naming/link/index rules.
+4. Apply only the confirmed version. If the user changes one part, keep the rest of the default template unless they say otherwise.
+5. Draft `AGENTS.md` as the vault constitution:
+   - vault purpose
+   - highest safety principles
    - directory map
    - naming rules
    - date header rules
@@ -82,49 +105,63 @@ When the user asks to build a personal Obsidian knowledge base, design the syste
    - task routing
    - index maintenance
    - actions requiring confirmation
-5. Create only first-level navigation pages by default, such as `00-目录名说明.md`. Each page must be written from the confirmed directory name, purpose, allowed note types, exclusion rules, and actual or planned child topics. Do not create identical boilerplate directory descriptions.
-6. Add a lightweight index plan only after the folder system is stable.
-7. Import existing content in small batches, preserving original meaning and avoiding broad rewrites.
+6. Create only first-level navigation pages by default, such as `00-目录名说明.md`. Each page must be written from the confirmed directory name, purpose, allowed note types, exclusion rules, and actual or planned child topics. Do not create identical boilerplate directory descriptions.
+7. Add a lightweight index plan only after the folder system is stable.
 
-For a reusable vault template and detailed rules, read `references/vault-rules.md`.
+For the default template and detailed rules, read `references/vault-rules.md`.
 
-## Common Maintenance Workflows
+## Module 5: Existing Vault Improvement
 
-### Import Or Move Materials
+Use this module when the target already contains `.obsidian/`, `AGENTS.md`, first-level folders, navigation pages, or meaningful Markdown content.
+
+1. Audit the current structure before proposing changes.
+2. Never overwrite existing `AGENTS.md`, navigation pages, or user-authored notes with a template.
+3. Present an incremental proposal with labels such as `keep`, `rename`, `add`, `remove`, and `move`.
+4. Wait for explicit user confirmation before creating top-level folders, moving files, renaming files, deleting anything, or replacing rule/navigation/index files.
+5. Existing user content wins over the default template.
+6. When a directory is renamed, added, removed, or repurposed, update the directory map, navigation pages, links, task routing, and indexes consistently.
+
+## Module 6: Import And Normalize Materials
+
+Use this module when the user asks to import, move, rename, convert, or organize materials.
 
 1. Inspect the source tree with `find` or `rg --files`.
 2. Decide the destination by reading the vault rules and existing nearby folders.
-3. Explain the intended destination and any renames before bulk moves.
+3. Explain the intended destination and any renames before broad or ambiguous moves.
 4. Move/import files only after user approval when the operation is broad or ambiguous.
 5. Normalize directory and file names to the vault naming style unless the user explicitly wants original names preserved.
-6. Add/update date blocks, `相关入口`, and sibling `相关文档` links.
-7. Update the relevant first-level navigation page.
-8. Rebuild JSONL indexes or append an index record as appropriate.
-9. Verify old paths are gone and new Obsidian links/index entries resolve.
+6. Preserve user-authored body content. Prefer adding metadata/link blocks and changing paths over rewriting prose.
+7. Add or update the date block, `相关入口`, and useful sibling/topic `相关文档` links.
+8. Clean obvious converter artifacts such as `\.`, `\-`, `\+`, `\_`, escaped brackets, and HTML conversion comments, but avoid altering code blocks unless necessary.
+9. Update the relevant first-level navigation page.
+10. Rebuild JSONL indexes or append an index record as appropriate.
+11. Verify old paths are gone and new Obsidian links/index entries resolve.
 
-### Add Or Normalize Markdown
+## Module 7: Navigation And Link Maintenance
 
-1. Preserve the original body.
-2. Add or update the date header.
-3. Add `相关入口` after the date block.
-4. Add `相关文档` for sibling/topic links when useful.
-5. Clean obvious converter artifacts such as `\.`, `\-`, `\+`, `\_`, escaped brackets, and HTML conversion comments, but avoid altering code blocks unless necessary.
-
-### Maintain Navigation And Links
+Use this module when maintaining directory descriptions, entry links, sibling links, or broken/stale links.
 
 - First-level navigation pages are the main table of contents for each area.
-- First-level navigation pages must reflect the user's confirmed area design. When an area is renamed, added, removed, or repurposed, update its description, allowed content, excluded content, links, and related rules instead of copying a generic template.
+- First-level navigation pages must reflect the user's confirmed area design. Each page should explain the area's purpose, what belongs there, what does not belong there, and the important child topics or notes.
 - Do not create second-level README/index notes unless the user asks or the folder is large enough to need one.
-- Use Obsidian double links, for example `[[05-实习材料/00-实习材料说明|实习材料]]`.
+- Use Obsidian double links, for example `[[05-职业材料/00-职业材料说明|职业材料]]`.
 - `相关入口` links upward to the first-level navigation page.
 - `相关文档` links sideways to sibling or topic-group notes.
+- When moving or renaming notes, update affected Obsidian links and navigation entries.
 
-### Rebuild Or Check JSONL Indexes
+## Module 8: Index And Audit Maintenance
 
-Use the bundled script from this skill folder:
+Use this module for JSONL indexes, date checks, and consistency audits.
+
+Read-only date check:
 
 ```bash
 python3 /path/to/obsidian-manage/scripts/vault_index.py --vault /path/to/vault --check-dates
+```
+
+Index rebuild:
+
+```bash
 python3 /path/to/obsidian-manage/scripts/vault_index.py --vault /path/to/vault --rebuild-index
 ```
 
@@ -140,12 +177,23 @@ Every Markdown file starts with a blank line, then:
 
 followed by one blank line before the rest of the document. Update the date whenever you modify a Markdown file.
 
+## Safety Rules
+
+- Treat the user's current explicit instruction as highest priority.
+- Do not create, move, rename, delete, merge, split, or bulk-edit files unless the user clearly asked for that action or approved the plan.
+- Before modifying an existing Markdown file, reread its current content.
+- Preserve user-authored body content.
+- Never delete user material automatically. Only remove obvious system metadata such as `.DS_Store` when it is part of a user-approved import/cleanup.
+- Ask before changing `AGENTS.md`, system-rule folders, index structure, or top-level vault directories unless the user explicitly requested it.
+
 ## Verification Checklist
 
 After edits, verify:
 
+- The selected module matched the user's current goal.
 - No unintended wrapper folders or stale paths remain.
 - All touched Markdown files have the correct date header for the current date.
+- Navigation pages are specific to their directories, not duplicated boilerplate.
 - Navigation pages link to newly added notes.
 - Sibling/topic documents link to each other when required.
 - JSONL indexes include the final paths.

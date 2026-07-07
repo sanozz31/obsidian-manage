@@ -2,6 +2,21 @@
 
 This reference captures a reusable process for personal Obsidian knowledge bases. Treat the folder map below as the default editable template, not a fixed requirement.
 
+## Modular Execution Model
+
+Use this reference through a modular flow:
+
+1. **Preflight And Routing**: identify the user's current goal, vault root, read/write risk, and applicable vault rules.
+2. **Install Or Resume Obsidian**: check the app, guide Homebrew or manual official installation, then continue after the user returns.
+3. **Select Or Create Vault**: scan candidate vaults or confirm the target path.
+4. **New Vault Design**: use only for an empty or absent target path.
+5. **Existing Vault Improvement**: use for any target with `.obsidian/`, `AGENTS.md`, numbered folders, navigation pages, or meaningful Markdown content.
+6. **Import And Normalize Materials**: route, move, rename, date-stamp, link, and index imported materials.
+7. **Navigation And Link Maintenance**: keep first-level navigation pages and Obsidian links accurate.
+8. **Index And Audit Maintenance**: check date headers and rebuild JSONL indexes.
+
+Every task starts with preflight, but later tasks should jump directly to the needed module instead of rerunning the full setup flow.
+
 ## App And Vault Detection
 
 Detecting Obsidian app installation and detecting existing vaults are separate tasks.
