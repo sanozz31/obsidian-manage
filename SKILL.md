@@ -10,7 +10,7 @@ Use this skill to build and maintain a personal Obsidian knowledge vault without
 ## Operating Principles
 
 1. Treat the user's current explicit instruction as highest priority.
-2. At the very start of first-time setup, run setup detection in this order: check the Obsidian app, prepare installation if missing, then detect candidate vaults. App detection never decides whether a vault exists; vault detection decides whether to create a new vault or adapt an existing one. Installing software must still use the current environment's approval mechanism; do not perform a silent install.
+2. At the very start of first-time setup, run setup detection in this order: check the Obsidian app, prepare installation guidance if missing, then detect candidate vaults. App detection never decides whether a vault exists; vault detection decides whether to create a new vault or adapt an existing one. On macOS, if Obsidian is missing and Homebrew is available, the agent may offer a Homebrew install command. If both Obsidian and Homebrew are missing, give the user the official download URL instead of trying to download the app directly. Installing software must still use the current environment's approval mechanism; do not perform a silent install.
 3. Ask for or infer the vault root before acting. If multiple possible vaults exist, ask the user which one to use.
 4. If the vault already has `AGENTS.md`, read it before writing anything.
 5. If the vault has system/routing/index documents, read them before doing routing or index work.
@@ -35,7 +35,7 @@ When the user is unsure whether they already have Obsidian or a vault:
 4. Detecting the Obsidian app is only auxiliary: use it to help the user understand local setup, not to decide whether a vault exists.
 5. If existing vaults are found, summarize them and ask the user which one to adapt before changing anything.
 
-Use the bundled script for setup checks and installation:
+Use the bundled script for setup checks and installation guidance:
 
 ```bash
 python3 /path/to/obsidian-manage/scripts/vault_index.py --detect-app
@@ -45,7 +45,7 @@ python3 /path/to/obsidian-manage/scripts/vault_index.py --find-vaults
 python3 /path/to/obsidian-manage/scripts/vault_index.py --find-vaults --search-root /path/to/search
 ```
 
-`--install-app` is a dry run by default and prints the package-manager command. Add `--yes-install` to actually install. The agent must request approval before running `--yes-install` because it installs software and may use the network.
+`--install-app` is a dry run by default. On macOS, if Obsidian is not installed and `brew` is available, it prints `brew install --cask obsidian`. Add `--yes-install` to actually run that command, after explicit user approval. If Obsidian and Homebrew are both missing, it prints the official download URL: `https://obsidian.md/download`. Do not auto-download DMG files from the website.
 
 ## New Vault vs Existing Vault
 

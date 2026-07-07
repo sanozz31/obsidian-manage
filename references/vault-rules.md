@@ -9,7 +9,7 @@ Detecting Obsidian app installation and detecting existing vaults are separate t
 - App detection answers: “Is Obsidian installed on this machine?”
 - Vault detection answers: “Where is the user's existing knowledge base?”
 
-At the start of first-time setup, check app installation first. If Obsidian is not installed, prepare the install step before vault creation or migration. Installation is dry-run by default in the bundled script; actual installation requires `--yes-install` and the active agent environment's approval mechanism.
+At the start of first-time setup, check app installation first. If Obsidian is not installed, prepare installation guidance before vault creation or migration. On macOS, if Homebrew is installed, automatic installation may use `brew install --cask obsidian`. If both Obsidian and Homebrew are missing, give the user the official download URL and ask them to install manually: `https://obsidian.md/download`. Installation is dry-run by default in the bundled script; actual Homebrew installation requires `--yes-install` and the active agent environment's approval mechanism.
 
 After app detection or installation planning, use vault detection to decide whether to create a new vault or adapt an existing one. Common vault signals include `.obsidian/`, `AGENTS.md`, first-level numbered note folders, navigation notes, or many Markdown files. If candidate vaults are found, ask the user which to use before modifying anything.
 
@@ -18,11 +18,12 @@ Obsidian app detection is platform-dependent and best-effort. This skill intenti
 - macOS: `/Applications/Obsidian.app`, `~/Applications/Obsidian.app`, or Spotlight/mdfind results.
 - Linux: `command -v obsidian`, Flatpak/Snap package checks, AppImage locations, or desktop entries.
 
-Suggested install commands when package managers are available. The bundled script prints these by default and runs them only with `--yes-install`:
+Suggested install behavior:
 
-- macOS: `brew install --cask obsidian`
-- Linux Flatpak: `flatpak install flathub md.obsidian.Obsidian`
-- Linux Snap: `snap install obsidian --classic`
+- macOS with Obsidian already installed: report the detected app path.
+- macOS with Homebrew but no Obsidian: print `brew install --cask obsidian`; run it only with `--yes-install` and user approval.
+- macOS without Obsidian and without Homebrew: print `https://obsidian.md/download` and tell the user to install manually.
+- Linux: detect existing installs best-effort, but default to the official download URL for installation guidance.
 
 ## Existing Vault Handling
 

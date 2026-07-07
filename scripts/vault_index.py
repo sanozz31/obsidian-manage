@@ -145,12 +145,6 @@ def install_command() -> list[str] | None:
     system = platform.system().lower()
     if system == "darwin" and shutil.which("brew"):
         return ["brew", "install", "--cask", "obsidian"]
-    if system != "linux":
-        return None
-    if shutil.which("flatpak"):
-        return ["flatpak", "install", "-y", "flathub", "md.obsidian.Obsidian"]
-    if shutil.which("snap"):
-        return ["snap", "install", "obsidian", "--classic"]
     return None
 
 
@@ -163,8 +157,10 @@ def install_obsidian_app(yes_install: bool) -> int:
         return 0
     command = install_command()
     if not command:
-        print("No supported package manager found for automatic Obsidian install.")
-        print("Install Obsidian manually from https://obsidian.md/download, then rerun detection.")
+        print("No automatic Obsidian install command is available.")
+        print("If this is macOS, install Homebrew first or install Obsidian manually.")
+        print("Official download: https://obsidian.md/download")
+        print("After installing Obsidian, rerun detection.")
         return 2
     print("Install command:", " ".join(command))
     if not yes_install:

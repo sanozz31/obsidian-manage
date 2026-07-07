@@ -70,7 +70,19 @@ python3 scripts/vault_index.py --detect-app
 
 ### 准备安装 Obsidian
 
-默认是 dry-run，只打印安装命令，不会真正安装：
+默认是 dry-run，不会真正安装。macOS 下如果已经安装 Homebrew 且没有检测到 Obsidian，会打印：
+
+```bash
+brew install --cask obsidian
+```
+
+如果本机既没有 Obsidian，也没有 Homebrew，则直接提示用户去官网下载：
+
+```text
+https://obsidian.md/download
+```
+
+不会自动从官网下载、挂载或安装 DMG。
 
 ```bash
 python3 scripts/vault_index.py --install-app
