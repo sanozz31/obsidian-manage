@@ -131,6 +131,7 @@ python3 scripts/vault_index.py --install-app --yes-install
 ```bash
 python3 scripts/vault_index.py --find-vaults
 python3 scripts/vault_index.py --find-vaults --search-root /path/to/search --max-depth 3
+python3 scripts/vault_index.py --find-vaults --search-root /path/to/search --nested-max-dirs 80
 ```
 
 ### 检查日期头
@@ -143,9 +144,10 @@ python3 scripts/vault_index.py --vault /path/to/vault --check-dates
 
 ```bash
 python3 scripts/vault_index.py --vault /path/to/vault --rebuild-index
+python3 scripts/vault_index.py --vault /path/to/vault --index-dir path/inside/vault --rebuild-index
 ```
 
-重建索引只覆盖脚本为当前 Vault 生成的索引文件，不会清空同目录下用户自建的其他 JSONL 文件。
+重建索引会覆盖脚本为当前 Vault 生成的索引文件，并自动清理过期的脚本索引；不会清空同目录下用户自建的其他 JSONL 文件。如果用户自定义了索引目录，可以用 `--index-dir` 指定。
 
 ## Skill 文件结构
 

@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
-import os
 import platform
 import re
 import shutil
@@ -16,6 +15,9 @@ DATE_RE = re.compile(r"^\n```text\n最后修改日期：\d{4}-\d{2}-\d{2}\n```\n
 SKIP_DIRS = {".git", ".hg", ".svn", ".obsidian", "node_modules", "Library", "Applications", "System", "Volumes"}
 NUMBERED_DIR_RE = re.compile(r"^\d{2}-.+")
 NAV_NOTE_RE = re.compile(r"^00-.+说明\.md$")
+INDEX_MANIFEST = "00-obsidian-manage-index-manifest.json"
+INDEX_FILE_RE = re.compile(r"^\d{2}-.+索引\.jsonl$")
+INDEX_RECORD_KEYS = {"date", "path", "title", "area", "type", "status"}
 
 
 def iter_markdown(vault: Path):
@@ -46,7 +48,10 @@ def make_record(vault: Path, path: Path, date: str) -> dict[str, str]:
     }
 
 
-def index_dir_for(vault: Path) -> Path:
+def index_dir_for(vault: Path, index_dir: str | None = None) -> Path:
+    if index_dir:
+        path = Path(index_dir).expanduser()
+        return path if path.is_absolute() else vault / path
     preferred = vault / "00-系统规则" / "03-索引文件"
     if preferred.exists() or (vault / "00-系统规则").exists():
         return preferred
@@ -70,8 +75,7 @@ def index_file_name(position: int, area: str) -> str:
     return f"{position:02d}-{clean}索引.jsonl"
 
 
-def infer_index_paths(vault: Path, records: list[dict[str, str]]) -> dict[str, Path]:
-    idx_dir = index_dir_for(vault)
+def infer_index_paths(vault: Path, records: list[dict[str, str]], idx_dir: Path) -> dict[str, Path]:
     areas = sorted({rec["area"] for rec in records}, key=area_sort_key)
     paths = {"all": idx_dir / index_file_name(1, "all")}
     for offset, area in enumerate(areas, start=2):
@@ -80,11 +84,76 @@ def infer_index_paths(vault: Path, records: list[dict[str, str]]) -> dict[str, P
     return paths
 
 
-def rebuild_index(vault: Path, date: str) -> None:
+def manifest_path(idx_dir: Path) -> Path:
+    return idx_dir / INDEX_MANIFEST
+
+
+def read_manifest(idx_dir: Path) -> set[str]:
+    path = manifest_path(idx_dir)
+    if not path.exists():
+        return set()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return set()
+    files = data.get("generated_files", [])
+    if not isinstance(files, list):
+        return set()
+    return {name for name in files if isinstance(name, str)}
+
+
+def looks_like_generated_index(path: Path) -> bool:
+    if not INDEX_FILE_RE.match(path.name):
+        return False
+    try:
+        lines = [line for line in path.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip()]
+    except OSError:
+        return False
+    if not lines:
+        return False
+    for line in lines:
+        try:
+            data = json.loads(line)
+        except json.JSONDecodeError:
+            return False
+        if not isinstance(data, dict) or not INDEX_RECORD_KEYS.issubset(data.keys()):
+            return False
+    return True
+
+
+def stale_generated_indexes(idx_dir: Path, current_names: set[str]) -> set[str]:
+    stale = set()
+    if not idx_dir.exists():
+        return stale
+    for path in idx_dir.glob("*.jsonl"):
+        if path.name in current_names:
+            continue
+        if looks_like_generated_index(path):
+            stale.add(path.name)
+    return stale
+
+
+def write_manifest(idx_dir: Path, index_paths: dict[str, Path], date: str) -> None:
+    names = sorted({path.name for path in index_paths.values()})
+    data = {
+        "tool": "obsidian-manage",
+        "date": date,
+        "generated_files": names,
+    }
+    manifest_path(idx_dir).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def rebuild_index(vault: Path, date: str, index_dir: str | None = None) -> None:
     records = [make_record(vault, md, date) for md in iter_markdown(vault)]
-    index_paths = infer_index_paths(vault, records)
-    idx_dir = index_dir_for(vault)
+    idx_dir = index_dir_for(vault, index_dir)
+    index_paths = infer_index_paths(vault, records, idx_dir)
     idx_dir.mkdir(parents=True, exist_ok=True)
+    current_names = {path.name for path in index_paths.values()}
+    old_generated_names = read_manifest(idx_dir) | stale_generated_indexes(idx_dir, current_names)
+    for old_name in old_generated_names - current_names:
+        old_path = idx_dir / old_name
+        if old_path.suffix == ".jsonl" and old_path.exists():
+            old_path.unlink()
     for path in index_paths.values():
         path.write_text("", encoding="utf-8")
 
@@ -96,6 +165,7 @@ def rebuild_index(vault: Path, date: str) -> None:
         if area_path:
             with area_path.open("a", encoding="utf-8") as f:
                 f.write(line + "\n")
+    write_manifest(idx_dir, index_paths, date)
 
 
 def check_dates(vault: Path) -> list[str]:
@@ -205,32 +275,64 @@ def current_dir_signals(path: Path) -> tuple[int, list[str]]:
     if nav_notes > 0:
         score += 2
         signals.append(f"{nav_notes} navigation note(s)")
-    nested_md = count_nested_markdown(path, limit=6)
+    return score, signals
+
+
+def count_nested_markdown(path: Path, limit: int, max_dirs: int) -> int:
+    count = 0
+    visited = 0
+    try:
+        stack = [path]
+        while stack and visited < max_dirs:
+            current = stack.pop()
+            visited += 1
+            for child in current.iterdir():
+                if child.name in SKIP_DIRS or child.name.startswith("."):
+                    continue
+                if child.is_dir():
+                    stack.append(child)
+                    continue
+                if child.suffix.lower() != ".md":
+                    continue
+                count += 1
+                if count >= limit:
+                    return count
+    except (OSError, PermissionError):
+        return count
+    return count
+
+
+def add_nested_markdown_signal(path: Path, signals: list[str], score: int, max_dirs: int) -> tuple[int, list[str]]:
+    nested_md = count_nested_markdown(path, limit=6, max_dirs=max_dirs)
     if nested_md >= 5:
         score += 3
         signals.append("5+ nested markdown files")
-    elif nested_md > direct_md:
+    elif nested_md > 0:
         score += 1
         signals.append("nested markdown files")
     return score, signals
 
 
-def count_nested_markdown(path: Path, limit: int) -> int:
-    count = 0
+def should_probe_nested(score: int, depth: int, max_depth: int) -> bool:
+    return score < 3 and depth <= max_depth
+
+
+def iter_visible_child_dirs(path: Path):
     try:
-        iterator = path.rglob("*.md")
-        for md in iterator:
-            if any(part in SKIP_DIRS for part in md.parts):
-                continue
-            count += 1
-            if count >= limit:
-                break
+        children = list(path.iterdir())
     except (OSError, PermissionError):
-        return 0
-    return count
+        return []
+    dirs = []
+    for child in children:
+        if not child.is_dir() or child.name.startswith("."):
+            continue
+        if child.name in SKIP_DIRS:
+            continue
+        dirs.append(child)
+    return dirs
 
 
-def find_vaults(search_roots: list[Path], max_depth: int, max_dirs: int) -> list[dict[str, object]]:
+def find_vaults(search_roots: list[Path], max_depth: int, max_dirs: int, nested_max_dirs: int) -> list[dict[str, object]]:
     results: dict[str, dict[str, object]] = {}
     visited = 0
     for root in search_roots:
@@ -242,21 +344,15 @@ def find_vaults(search_roots: list[Path], max_depth: int, max_dirs: int) -> list
             current, depth = stack.pop()
             visited += 1
             score, signals = current_dir_signals(current)
+            if should_probe_nested(score, depth, max_depth):
+                score, signals = add_nested_markdown_signal(current, signals, score, nested_max_dirs)
             if score >= 3:
                 results[str(current)] = {"path": str(current), "score": score, "signals": signals}
                 if current != root:
                     continue
             if depth >= max_depth:
                 continue
-            try:
-                children = list(current.iterdir())
-            except (OSError, PermissionError):
-                continue
-            for child in children:
-                if not child.is_dir() or child.name.startswith("."):
-                    continue
-                if child.name in SKIP_DIRS:
-                    continue
+            for child in iter_visible_child_dirs(current):
                 stack.append((child, depth + 1))
     return sorted(results.values(), key=lambda item: (-int(item["score"]), str(item["path"])))
 
@@ -288,6 +384,8 @@ def main() -> int:
     parser.add_argument("--search-root", action="append", help="Root folder to scan for vaults; can be repeated")
     parser.add_argument("--max-depth", type=int, default=3, help="Maximum directory depth for --find-vaults")
     parser.add_argument("--max-dirs", type=int, default=5000, help="Maximum directories to inspect for --find-vaults")
+    parser.add_argument("--nested-max-dirs", type=int, default=80, help="Maximum nested dirs to inspect per folder for markdown vault signals")
+    parser.add_argument("--index-dir", help="Index directory path, absolute or relative to --vault")
     args = parser.parse_args()
 
     if args.detect_app:
@@ -306,7 +404,7 @@ def main() -> int:
 
     if args.find_vaults:
         roots = [Path(p) for p in args.search_root] if args.search_root else default_search_roots()
-        candidates = find_vaults(roots, args.max_depth, args.max_dirs)
+        candidates = find_vaults(roots, args.max_depth, args.max_dirs, args.nested_max_dirs)
         if candidates:
             print("Candidate vaults:")
             for item in candidates:
@@ -327,8 +425,9 @@ def main() -> int:
 
     if args.rebuild_index:
         vault = require_vault(args.vault)
-        rebuild_index(vault, args.date)
-        print(f"Rebuilt indexes for {vault} with date {args.date}.")
+        rebuild_index(vault, args.date, args.index_dir)
+        idx_dir = index_dir_for(vault, args.index_dir)
+        print(f"Rebuilt indexes for {vault} in {idx_dir} with date {args.date}.")
 
     if not any([args.detect_app, args.install_app, args.find_vaults, args.check_dates, args.rebuild_index]):
         parser.print_help()

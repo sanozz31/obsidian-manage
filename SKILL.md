@@ -79,6 +79,7 @@ Use this module when the vault root is unknown, new, or ambiguous.
 ```bash
 python3 /path/to/obsidian-manage/scripts/vault_index.py --find-vaults
 python3 /path/to/obsidian-manage/scripts/vault_index.py --find-vaults --search-root /path/to/search
+python3 /path/to/obsidian-manage/scripts/vault_index.py --find-vaults --search-root /path/to/search --nested-max-dirs 80
 ```
 
 3. Treat a folder as a candidate vault if it contains `.obsidian/`, `AGENTS.md`, first-level numbered note folders, navigation notes, or a meaningful collection of Markdown files.
@@ -163,9 +164,10 @@ Index rebuild:
 
 ```bash
 python3 /path/to/obsidian-manage/scripts/vault_index.py --vault /path/to/vault --rebuild-index
+python3 /path/to/obsidian-manage/scripts/vault_index.py --vault /path/to/vault --index-dir path/inside/vault --rebuild-index
 ```
 
-`--check-dates` is read-only. `--rebuild-index` rewrites the JSONL index files generated for the current vault under `00-系统规则/03-索引文件/`, but must not clear unrelated user-created JSONL files; explain before running it.
+`--check-dates` is read-only. `--rebuild-index` rewrites the JSONL index files generated for the current vault under the configured index directory, defaults to `00-系统规则/03-索引文件/`, and automatically removes stale script-generated index files. It must not clear unrelated user-created JSONL files. Use `--index-dir` when the user customized the system/index folder path; explain before running it.
 
 ## Required Formatting
 
