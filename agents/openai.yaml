@@ -1,0 +1,6 @@
+interface:
+  display_name: "Obsidian Manage"
+  short_description: "搭建并管理个人 Obsidian 知识库"
+  default_prompt: "Use $obsidian-manage to build or organize my local Obsidian vault."
+policy:
+  allow_implicit_invocation: true
