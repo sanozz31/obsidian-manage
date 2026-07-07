@@ -14,6 +14,7 @@ Use this reference through a modular flow:
 6. **Import And Normalize Materials**: route, move, rename, date-stamp, link, and index imported materials.
 7. **Navigation And Link Maintenance**: keep first-level navigation pages and Obsidian links accurate.
 8. **Index And Audit Maintenance**: check date headers and rebuild JSONL indexes.
+9. **Task-Specific Writing And Synthesis**: create, revise, summarize, plan, or synthesize content according to the target area's rules and evidence.
 
 Every task starts with preflight, but later tasks should jump directly to the needed module instead of rerunning the full setup flow.
 
@@ -51,6 +52,7 @@ Recommended decision flow:
 3. If existing content is present: summarize the current structure, identify gaps, and propose incremental changes.
 4. Ask the user to confirm before creating top-level folders, moving files, renaming files, deleting anything, or replacing rule/navigation/index files.
 5. Never overwrite existing `AGENTS.md` or navigation pages with a template. Merge carefully only after confirmation.
+6. Do not add folders, pages, fields, templates, or workflow documents just to make the vault look complete. Add only what serves the user's confirmed goal.
 
 ## Customization Workflow
 
@@ -78,6 +80,8 @@ For existing vaults, do not force the default template onto the current structur
 7. **Add indexes after structure stabilizes**: JSONL indexes are useful for agents but should not replace the filesystem.
 8. **Audit regularly**: check date headers, broken/stale paths, orphan notes, and navigation gaps.
 
+Before creating any formal note, search the target folder and nearby topic folders for similar files. Prefer updating, linking, or proposing a merge before creating duplicates.
+
 ## Recommended AGENTS.md Sections
 
 - Vault purpose
@@ -87,6 +91,7 @@ For existing vaults, do not force the default template onto the current structur
 - Date header rules
 - Link rules
 - Task routing rules
+- Task-specific quality standards
 - Index and record rules
 - Actions requiring confirmation
 - External rules/project rule priority
@@ -145,6 +150,35 @@ Use `相关入口` for the first-level navigation page and `相关文档` for si
 
 When same-topic files exist in different formats, link them to each other explicitly. For example, the Markdown note should link to the source or companion file, and the source-derived Markdown should keep a visible reference back to the original file path/name when practical.
 
+## Task-Specific Quality Standards
+
+Product notes, PRDs, and prototype descriptions should first clarify the real problem, target user, core loop, scope, data source, time range, granularity, and metric definitions. Unconfirmed features should stay in a pending or optional section rather than being written as committed scope.
+
+Learning and tool-method notes should capture reusable workflow: applicable scene, steps, pitfalls, boundaries, and verification method. Do not only list tool features.
+
+Project-memory notes should include context, decision, constraints, verified commands or artifacts, pitfalls, solution, and follow-up cautions. Project-specific rules override the general vault rules.
+
+Career, interview, resume, and portfolio materials must stay grounded in the user's real experience. Do not invent companies, metrics, outcomes, responsibilities, or project results.
+
+Academic and research notes must not invent papers, claims, policies, data, citations, DOI values, journal facts, or publication facts. Mark unverified items clearly.
+
+Planning and retrospective notes must be based on existing records. Do not turn unrecorded work into completed work. Useful retrospectives include completed work, unfinished work, blockers, and next smallest actions.
+
+Writing and article-revision tasks should read the user's style/context notes when available, preserve the user's voice, avoid generic filler, and start with structure or an outline when the request is broad. If source material is insufficient, list gaps instead of filling them with unsupported content.
+
+## Write Safety
+
+Before creating or modifying files, decide:
+
+- Which area and topic the content belongs to.
+- Whether it is a draft, formal note, project memory, source material, or retrospective.
+- Whether a similar file already exists.
+- Whether the action needs confirmation.
+
+For formal product, research, resume, portfolio, or project documents, keep unconfirmed content labeled as suggestion, draft, assumption, gap, or pending confirmation. Do not silently write suggestions into formal documents.
+
+If `.obsidian/app.json` exists and delete confirmation is disabled, deletion and trash actions are high-risk. The agent must not delete or trash files without explicit confirmation for the specific action.
+
 ## JSONL Index Files
 
 Index directory: `00-系统规则/03-索引文件/`.
@@ -169,6 +203,31 @@ Record shape:
 
 The filesystem is the source of truth. Rebuild indexes when paths have changed a lot. Rebuilds should overwrite current generated index files, automatically remove stale script-generated index files, and preserve unrelated user-created JSONL files in the same folder. If the user customized the system/index directory, pass the chosen path with `--index-dir`. The index directory must resolve inside the vault by default; use `--allow-external-index-dir` only after explicit user confirmation that indexes should be written outside the vault.
 
+## Rule Priority
+
+When multiple rule sources apply, use this priority order:
+
+1. The user's current explicit instruction.
+2. The vault's root `AGENTS.md`.
+3. The task area's local rules, navigation page, or workflow notes.
+4. The relevant project or external rule files named by the vault.
+5. The skill's general rules.
+6. The agent's default habits.
+
+If rules conflict, state the conflict and ask the user to choose before writing.
+
+## Agent Work Loop
+
+For every non-trivial vault task:
+
+1. Classify the task type.
+2. Read the root rules and relevant local rules.
+3. Read the relevant materials.
+4. If the task is analysis-only, output the judgment.
+5. If the task changes files, propose the scope and risky actions.
+6. Execute only the confirmed or clearly requested changes.
+7. Report what changed, what did not change, verification results, and useful next steps.
+
 ## Routing Reminders
 
 - Product/PRD work: read relevant product rules and `02-产品工作/` notes.
@@ -176,3 +235,4 @@ The filesystem is the source of truth. Rebuild indexes when paths have changed a
 - Academic work: never invent references; mark unverified claims clearly.
 - Career/interview/resume work: stay grounded in the user's real experience.
 - Writing/personal preference work: read the personal-context area first.
+- Planning/retrospective work: read existing records first and avoid inventing completion status.

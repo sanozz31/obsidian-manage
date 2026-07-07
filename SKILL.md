@@ -17,6 +17,7 @@ Use this skill to build and maintain a personal Obsidian knowledge vault without
 6. **Import And Normalize Materials**: use for moving, renaming, converting, linking, and date-stamping notes.
 7. **Navigation And Link Maintenance**: use for directory descriptions, entry links, sibling links, and broken/stale links.
 8. **Index And Audit Maintenance**: use for date checks, JSONL rebuilds, and consistency audits.
+9. **Task-Specific Writing And Synthesis**: use for writing, revising, summarizing, planning, retrospectives, product notes, research notes, career materials, and learning-method notes inside the vault.
 
 Do not run a full setup flow when a later module is enough. Example: if the user asks to rebuild indexes for a known vault, run preflight, read the vault rules if present, then use Index And Audit Maintenance.
 
@@ -30,8 +31,9 @@ Run this module before every action.
 4. If the vault root is known, inspect the real filesystem before relying on JSONL indexes.
 5. If the vault has `AGENTS.md`, read it before writing anything.
 6. If the vault has system/routing/index documents, read them before routing notes or rebuilding indexes.
-7. Choose exactly one next module unless the task clearly needs a sequence.
-8. If writing outside the current workspace or protected paths, ask for permission or use the available approval mechanism with a clear user-facing justification.
+7. If the task may delete, trash, overwrite, merge, split, or broadly move files, inspect `.obsidian/app.json` when present. If delete confirmation is disabled, treat every delete/trash action as high risk and require explicit user confirmation.
+8. Choose exactly one next module unless the task clearly needs a sequence.
+9. If writing outside the current workspace or protected paths, ask for permission or use the available approval mechanism with a clear user-facing justification.
 
 Filesystem state is the source of truth. JSONL indexes are auxiliary.
 
@@ -132,12 +134,13 @@ Use this module when the user asks to import, move, rename, convert, or organize
 4. Move/import files only after user approval when the operation is broad or ambiguous.
 5. Normalize directory and file names to the vault naming style unless the user explicitly wants original names preserved.
 6. When two files share the same topic/title but have different formats, keep the same two-digit sequence number, for example `03-项目简历.md` and `03-项目简历.docx`.
-7. Preserve user-authored body content. Prefer adding metadata/link blocks and changing paths over rewriting prose.
-8. Add or update the date block, `相关入口`, and useful sibling/topic `相关文档` links. For same-topic files in different formats, add explicit links between the Markdown note and the source/companion file.
-9. Clean obvious converter artifacts such as `\.`, `\-`, `\+`, `\_`, escaped brackets, and HTML conversion comments, but avoid altering code blocks unless necessary.
-10. Update the relevant first-level navigation page.
-11. Rebuild JSONL indexes or append an index record as appropriate.
-12. Verify old paths are gone and new Obsidian links/index entries resolve.
+7. Before creating a new formal note, search nearby folders for same-topic or similar files and prefer updating/linking existing notes over creating duplicates.
+8. Preserve user-authored body content. Prefer adding metadata/link blocks and changing paths over rewriting prose.
+9. Add or update the date block, `相关入口`, and useful sibling/topic `相关文档` links. For same-topic files in different formats, add explicit links between the Markdown note and the source/companion file.
+10. Clean obvious converter artifacts such as `\.`, `\-`, `\+`, `\_`, escaped brackets, and HTML conversion comments, but avoid altering code blocks unless necessary.
+11. Update the relevant first-level navigation page.
+12. Rebuild JSONL indexes or append an index record as appropriate.
+13. Verify old paths are gone and new Obsidian links/index entries resolve.
 
 ## Module 7: Navigation And Link Maintenance
 
@@ -171,6 +174,22 @@ python3 /path/to/obsidian-manage/scripts/vault_index.py --vault /path/to/vault -
 
 `--check-dates` is read-only. `--rebuild-index` rewrites the JSONL index files generated for the current vault under the configured index directory, defaults to `00-系统规则/03-索引文件/`, and automatically removes stale script-generated index files. It must not clear unrelated user-created JSONL files. Use `--index-dir` when the user customized the system/index folder path; by default it must resolve inside the vault. Only use `--allow-external-index-dir` after explicit user confirmation that indexes should live outside the vault.
 
+## Module 9: Task-Specific Writing And Synthesis
+
+Use this module when the user asks the agent to create, revise, summarize, or synthesize content inside the vault.
+
+1. Read the vault rules, the target area's navigation page, and any relevant existing notes before writing.
+2. If the task is analytical only, report the judgment first without editing files.
+3. If the task changes formal content, propose the change scope and wait for confirmation unless the user explicitly asked for direct editing.
+4. Product notes should first clarify the real problem, target user, core loop, scope, data source, time range, granularity, and metric definitions.
+5. Learning or tool-method notes should capture reusable workflow: applicable scene, steps, pitfalls, boundaries, and verification method, not only feature descriptions.
+6. Project-memory notes should include context, decision, constraints, verified commands or artifacts, pitfalls, solution, and follow-up cautions.
+7. Career, interview, resume, and portfolio materials must stay grounded in the user's real experience; do not invent companies, metrics, outcomes, or responsibilities.
+8. Academic and research notes must not invent papers, claims, policies, data, citations, DOI values, or publication facts. Mark unverified items clearly.
+9. Planning and retrospective notes must be based on existing records. Do not turn unrecorded work into completed work; include completed work, unfinished work, blockers, and next smallest actions.
+10. Writing and article-revision tasks should read the user's style/context notes when available, preserve the user's voice, avoid generic filler, and start with structure or an outline when the request is broad.
+11. If source material is insufficient, list gaps or assumptions instead of filling them with unsupported content.
+
 ## Required Formatting
 
 Every Markdown file starts with a blank line, then:
@@ -187,8 +206,37 @@ followed by one blank line before the rest of the document. Update the date when
 - Do not create, move, rename, delete, merge, split, or bulk-edit files unless the user clearly asked for that action or approved the plan.
 - Before modifying an existing Markdown file, reread its current content.
 - Preserve user-authored body content.
+- Do not add folders, fields, pages, templates, or sections only to make the vault look complete; every addition must serve the current user goal.
+- Before creating a new formal note, check for similar existing files and decide whether to update, link, merge by proposal, or create a new note.
 - Never delete user material automatically. Only remove obvious system metadata such as `.DS_Store` when it is part of a user-approved import/cleanup.
-- Ask before changing `AGENTS.md`, system-rule folders, index structure, or top-level vault directories unless the user explicitly requested it.
+- If `.obsidian/app.json` shows delete confirmation is disabled, do not delete or trash files without explicit confirmation for the specific action.
+- Ask before changing `AGENTS.md`, system-rule folders, index structure, top-level vault directories, or formal product/research/resume/project documents unless the user explicitly requested it.
+- Keep suggested or unconfirmed content labeled as suggestions, drafts, assumptions, gaps, or pending confirmation. Do not silently write it into formal documents.
+
+## Rule Priority
+
+When multiple rule sources apply, use this priority order:
+
+1. The user's current explicit instruction.
+2. The vault's root `AGENTS.md`.
+3. The task area's local rules, navigation page, or workflow notes.
+4. The relevant project or external rule files named by the vault.
+5. The skill's general rules.
+6. The agent's default habits.
+
+If rules conflict, state the conflict and ask the user to choose before writing.
+
+## Agent Work Loop
+
+For every non-trivial vault task:
+
+1. Classify the task type.
+2. Read the root rules and relevant local rules.
+3. Read the relevant materials.
+4. If the task is analysis-only, output the judgment.
+5. If the task changes files, propose the scope and risky actions.
+6. Execute only the confirmed or clearly requested changes.
+7. Report what changed, what did not change, verification results, and useful next steps.
 
 ## Verification Checklist
 
