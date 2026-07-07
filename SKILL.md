@@ -129,18 +129,19 @@ Use this module when the target already contains `.obsidian/`, `AGENTS.md`, firs
 Use this module when the user asks to import, move, rename, convert, or organize materials.
 
 1. Inspect the source tree with `find` or `rg --files`.
-2. Decide the destination by reading the vault rules and existing nearby folders.
-3. Explain the intended destination and any renames before broad or ambiguous moves.
-4. Move/import files only after user approval when the operation is broad or ambiguous.
-5. Normalize directory and file names to the vault naming style unless the user explicitly wants original names preserved.
-6. When two files share the same topic/title but have different formats, keep the same two-digit sequence number, for example `03-项目简历.md` and `03-项目简历.docx`.
-7. Before creating a new formal note, search nearby folders for same-topic or similar files and prefer updating/linking existing notes over creating duplicates.
-8. Preserve user-authored body content. Prefer adding metadata/link blocks and changing paths over rewriting prose.
-9. Add or update the date block, `相关入口`, and useful sibling/topic `相关文档` links. For same-topic files in different formats, add explicit links between the Markdown note and the source/companion file.
-10. Clean obvious converter artifacts such as `\.`, `\-`, `\+`, `\_`, escaped brackets, and HTML conversion comments, but avoid altering code blocks unless necessary.
-11. Update the relevant first-level navigation page.
-12. Rebuild JSONL indexes or append an index record as appropriate.
-13. Verify old paths are gone and new Obsidian links/index entries resolve.
+2. When the user says "newly added files" or similar, list candidate files and state the detection basis before editing, such as user-provided paths, file modified time, missing index entries, missing date headers, navigation gaps, or source-folder contents.
+3. Decide the destination by reading the vault rules and existing nearby folders.
+4. Explain the intended destination and any renames before broad or ambiguous moves.
+5. Move/import files only after user approval when the operation is broad or ambiguous.
+6. Normalize directory and file names to the vault naming style unless the user explicitly wants original names preserved.
+7. When two files share the same topic/title but have different formats, keep the same two-digit sequence number, for example `03-项目简历.md` and `03-项目简历.docx`.
+8. Before creating a new formal note, search nearby folders for same-topic or similar files and prefer updating/linking existing notes over creating duplicates.
+9. Preserve user-authored body content. Prefer adding metadata/link blocks and changing paths over rewriting prose.
+10. Add or update the date block, `相关入口`, and useful sibling/topic `相关文档` links. For same-topic Markdown files, create reciprocal links. For non-Markdown companions such as PDF, DOCX, images, archives, or source files, link them from the Markdown note and navigation page when useful; do not try to modify binary attachments just to add a backlink.
+11. Clean obvious converter artifacts such as `\.`, `\-`, `\+`, `\_`, escaped brackets, and HTML conversion comments only outside fenced code blocks. For broad cleanups, describe the cleanup pattern before writing.
+12. Update the relevant first-level navigation page.
+13. Rebuild JSONL indexes or append an index record as appropriate.
+14. Verify old paths are gone and new Obsidian links/index entries resolve.
 
 ## Module 7: Navigation And Link Maintenance
 
@@ -152,7 +153,7 @@ Use this module when maintaining directory descriptions, entry links, sibling li
 - Use Obsidian double links, for example `[[05-职业材料/00-职业材料说明|职业材料]]`.
 - `相关入口` links upward to the first-level navigation page.
 - `相关文档` links sideways to sibling or topic-group notes.
-- Same-topic files with different formats must share the same two-digit sequence number and link to each other.
+- Same-topic files with different formats must share the same two-digit sequence number. Markdown companions should link to each other; non-Markdown attachments should be linked from the Markdown note and navigation page when useful.
 - When moving or renaming notes, update affected Obsidian links and navigation entries.
 
 ## Module 8: Index And Audit Maintenance
@@ -172,7 +173,7 @@ python3 /path/to/obsidian-manage/scripts/vault_index.py --vault /path/to/vault -
 python3 /path/to/obsidian-manage/scripts/vault_index.py --vault /path/to/vault --index-dir path/inside/vault --rebuild-index
 ```
 
-`--check-dates` is read-only. `--rebuild-index` rewrites the JSONL index files generated for the current vault under the configured index directory, defaults to `00-系统规则/03-索引文件/`, and automatically removes stale script-generated index files. It must not clear unrelated user-created JSONL files. Use `--index-dir` when the user customized the system/index folder path; by default it must resolve inside the vault. Only use `--allow-external-index-dir` after explicit user confirmation that indexes should live outside the vault.
+`--check-dates` is read-only. `--rebuild-index` rewrites the JSONL index files generated for the current vault under the configured index directory, defaults to `00-系统规则/03-索引文件/`, and automatically removes stale script-generated index files. It reuses files listed in the manifest or files that match the script-generated JSONL record shape, so legacy generated indexes do not force numbering to jump. It must not clear unrelated user-created JSONL files. Use `--index-dir` when the user customized the system/index folder path; by default it must resolve inside the vault. Only use `--allow-external-index-dir` after explicit user confirmation that indexes should live outside the vault.
 
 ## Module 9: Task-Specific Writing And Synthesis
 
@@ -250,3 +251,4 @@ After edits, verify:
 - Sibling/topic documents link to each other when required.
 - JSONL indexes include the final paths.
 - `AGENTS.md` and system-rule files were updated only when necessary and allowed.
+- The final response distinguishes files actually changed, files only checked, and items intentionally deferred because they require confirmation.

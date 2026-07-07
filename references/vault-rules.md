@@ -82,6 +82,8 @@ For existing vaults, do not force the default template onto the current structur
 
 Before creating any formal note, search the target folder and nearby topic folders for similar files. Prefer updating, linking, or proposing a merge before creating duplicates.
 
+When the user asks to handle "newly added files", list the candidate files and explain the detection basis before editing. Useful signals include user-provided paths, file modified time, missing index entries, missing date headers, navigation gaps, and source-folder contents.
+
 ## Recommended AGENTS.md Sections
 
 - Vault purpose
@@ -148,7 +150,7 @@ After the date block, formal notes should usually have:
 
 Use `相关入口` for the first-level navigation page and `相关文档` for sibling/topic links.
 
-When same-topic files exist in different formats, link them to each other explicitly. For example, the Markdown note should link to the source or companion file, and the source-derived Markdown should keep a visible reference back to the original file path/name when practical.
+When same-topic files exist in different formats, keep the same sequence number and link them explicitly where the format allows it. Markdown-to-Markdown companions should link to each other. For non-Markdown companions such as PDF, DOCX, images, archives, or source files, link the attachment from the Markdown note and navigation page when useful; do not modify binary attachments just to add a backlink.
 
 ## Task-Specific Quality Standards
 
@@ -179,6 +181,8 @@ For formal product, research, resume, portfolio, or project documents, keep unco
 
 If `.obsidian/app.json` exists and delete confirmation is disabled, deletion and trash actions are high-risk. The agent must not delete or trash files without explicit confirmation for the specific action.
 
+When cleaning converter artifacts such as escaped punctuation or HTML conversion comments, operate only outside fenced code blocks. For broad cleanups, state the cleanup pattern before writing.
+
 ## JSONL Index Files
 
 Index directory: `00-系统规则/03-索引文件/`.
@@ -201,7 +205,7 @@ Record shape:
 {"date":"2026-07-07","path":"05-职业材料/01-面试准备/01-岗位分析.md","title":"01-岗位分析","area":"05-职业材料","type":"note","status":"active"}
 ```
 
-The filesystem is the source of truth. Rebuild indexes when paths have changed a lot. Rebuilds should overwrite current generated index files, automatically remove stale script-generated index files, and preserve unrelated user-created JSONL files in the same folder. If the user customized the system/index directory, pass the chosen path with `--index-dir`. The index directory must resolve inside the vault by default; use `--allow-external-index-dir` only after explicit user confirmation that indexes should be written outside the vault.
+The filesystem is the source of truth. Rebuild indexes when paths have changed a lot. Rebuilds should overwrite current generated index files, automatically remove stale script-generated index files, and preserve unrelated user-created JSONL files in the same folder. The script reuses files listed in the manifest or files that match the generated JSONL record shape, so legacy generated indexes do not force numbering to jump. If the user customized the system/index directory, pass the chosen path with `--index-dir`. The index directory must resolve inside the vault by default; use `--allow-external-index-dir` only after explicit user confirmation that indexes should be written outside the vault.
 
 ## Rule Priority
 
@@ -227,6 +231,8 @@ For every non-trivial vault task:
 5. If the task changes files, propose the scope and risky actions.
 6. Execute only the confirmed or clearly requested changes.
 7. Report what changed, what did not change, verification results, and useful next steps.
+
+Final reports for organizing/import tasks should distinguish files actually changed, files only checked, and items intentionally deferred because they require confirmation.
 
 ## Routing Reminders
 

@@ -131,11 +131,23 @@ def index_position(name: str) -> int | None:
     return int(match.group(1))
 
 
-def existing_index_positions(idx_dir: Path) -> set[int]:
+def reusable_generated_index_names(idx_dir: Path) -> set[str]:
+    reusable = set()
+    if not idx_dir.exists():
+        return reusable
+    for path in idx_dir.glob("*.jsonl"):
+        if looks_like_generated_index(path):
+            reusable.add(path.name)
+    return reusable
+
+
+def reserved_index_positions(idx_dir: Path, reusable_names: set[str]) -> set[int]:
     if not idx_dir.exists():
         return set()
     positions = set()
     for path in idx_dir.glob("*.jsonl"):
+        if path.name in reusable_names:
+            continue
         position = index_position(path.name)
         if position is not None:
             positions.add(position)
@@ -172,13 +184,14 @@ def unused_index_path(
 
 def infer_index_paths(records: list[dict[str, str]], idx_dir: Path, managed_names: set[str]) -> dict[str, Path]:
     areas = sorted({rec["area"] for rec in records}, key=area_sort_key)
+    reusable_names = managed_names | reusable_generated_index_names(idx_dir)
     reserved_names: set[str] = set()
-    reserved_positions = existing_index_positions(idx_dir)
+    reserved_positions = reserved_index_positions(idx_dir, reusable_names)
     all_path = managed_index_path(idx_dir, managed_names, "all")
     if all_path:
         reserve_index_path(all_path, reserved_names, reserved_positions)
     else:
-        all_path = unused_index_path(idx_dir, 1, "all", reserved_names, reserved_positions, managed_names)
+        all_path = unused_index_path(idx_dir, 1, "all", reserved_names, reserved_positions, reusable_names)
     paths = {"all": all_path}
     for offset, area in enumerate(areas, start=2):
         managed_path = managed_index_path(idx_dir, managed_names, area)
@@ -186,7 +199,7 @@ def infer_index_paths(records: list[dict[str, str]], idx_dir: Path, managed_name
             reserve_index_path(managed_path, reserved_names, reserved_positions)
             paths[area] = managed_path
             continue
-        paths[area] = unused_index_path(idx_dir, offset, area, reserved_names, reserved_positions, managed_names)
+        paths[area] = unused_index_path(idx_dir, offset, area, reserved_names, reserved_positions, reusable_names)
     return paths
 
 
