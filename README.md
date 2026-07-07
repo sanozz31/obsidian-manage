@@ -147,7 +147,7 @@ python3 scripts/vault_index.py --vault /path/to/vault --rebuild-index
 python3 scripts/vault_index.py --vault /path/to/vault --index-dir path/inside/vault --rebuild-index
 ```
 
-重建索引会覆盖脚本为当前 Vault 生成的索引文件，并自动清理过期的脚本索引；不会清空同目录下用户自建的其他 JSONL 文件。如果用户自定义了索引目录，可以用 `--index-dir` 指定。
+重建索引会覆盖脚本为当前 Vault 生成的索引文件，并自动清理过期的脚本索引；不会清空同目录下用户自建的其他 JSONL 文件。如果用户自定义了索引目录，可以用 `--index-dir` 指定。默认情况下，索引目录必须位于当前 Vault 内；如果用户明确确认要把索引放在 Vault 外部，才可以追加 `--allow-external-index-dir`。
 
 ## Skill 文件结构
 

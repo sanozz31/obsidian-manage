@@ -48,10 +48,42 @@ def make_record(vault: Path, path: Path, date: str) -> dict[str, str]:
     }
 
 
-def index_dir_for(vault: Path, index_dir: str | None = None) -> Path:
+def path_is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+    except ValueError:
+        return False
+    return True
+
+
+def safe_manifest_name(name: str) -> str | None:
+    if not isinstance(name, str) or not name:
+        return None
+    if "/" in name or "\\" in name:
+        return None
+    path = Path(name)
+    if path.is_absolute() or path.name != name or name in {".", ".."}:
+        return None
+    if path.suffix != ".jsonl":
+        return None
+    return name
+
+
+def ensure_index_dir_allowed(vault: Path, path: Path, allow_external: bool) -> Path:
+    if allow_external:
+        return path
+    vault_resolved = vault.resolve(strict=False)
+    path_resolved = path.resolve(strict=False)
+    if not path_is_relative_to(path_resolved, vault_resolved):
+        raise SystemExit("Index directory must be inside the vault unless --allow-external-index-dir is set")
+    return path
+
+
+def index_dir_for(vault: Path, index_dir: str | None = None, allow_external: bool = False) -> Path:
     if index_dir:
         path = Path(index_dir).expanduser()
-        return path if path.is_absolute() else vault / path
+        candidate = path if path.is_absolute() else vault / path
+        return ensure_index_dir_allowed(vault, candidate, allow_external)
     preferred = vault / "00-系统规则" / "03-索引文件"
     if preferred.exists() or (vault / "00-系统规则").exists():
         return preferred
@@ -99,7 +131,14 @@ def read_manifest(idx_dir: Path) -> set[str]:
     files = data.get("generated_files", [])
     if not isinstance(files, list):
         return set()
-    return {name for name in files if isinstance(name, str)}
+    safe_names = set()
+    for name in files:
+        if not isinstance(name, str):
+            continue
+        safe_name = safe_manifest_name(name)
+        if safe_name:
+            safe_names.add(safe_name)
+    return safe_names
 
 
 def looks_like_generated_index(path: Path) -> bool:
@@ -143,15 +182,21 @@ def write_manifest(idx_dir: Path, index_paths: dict[str, Path], date: str) -> No
     manifest_path(idx_dir).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def rebuild_index(vault: Path, date: str, index_dir: str | None = None) -> None:
+def rebuild_index(vault: Path, date: str, index_dir: str | None = None, allow_external_index_dir: bool = False) -> None:
     records = [make_record(vault, md, date) for md in iter_markdown(vault)]
-    idx_dir = index_dir_for(vault, index_dir)
+    idx_dir = index_dir_for(vault, index_dir, allow_external_index_dir)
     index_paths = infer_index_paths(vault, records, idx_dir)
     idx_dir.mkdir(parents=True, exist_ok=True)
     current_names = {path.name for path in index_paths.values()}
     old_generated_names = read_manifest(idx_dir) | stale_generated_indexes(idx_dir, current_names)
+    idx_root = idx_dir.resolve(strict=False)
     for old_name in old_generated_names - current_names:
-        old_path = idx_dir / old_name
+        safe_name = safe_manifest_name(old_name)
+        if not safe_name:
+            continue
+        old_path = (idx_dir / safe_name).resolve(strict=False)
+        if not path_is_relative_to(old_path, idx_root):
+            continue
         if old_path.suffix == ".jsonl" and old_path.exists():
             old_path.unlink()
     for path in index_paths.values():
@@ -385,7 +430,8 @@ def main() -> int:
     parser.add_argument("--max-depth", type=int, default=3, help="Maximum directory depth for --find-vaults")
     parser.add_argument("--max-dirs", type=int, default=5000, help="Maximum directories to inspect for --find-vaults")
     parser.add_argument("--nested-max-dirs", type=int, default=80, help="Maximum nested dirs to inspect per folder for markdown vault signals")
-    parser.add_argument("--index-dir", help="Index directory path, absolute or relative to --vault")
+    parser.add_argument("--index-dir", help="Index directory path; defaults to inside --vault and must stay inside --vault unless explicitly allowed")
+    parser.add_argument("--allow-external-index-dir", action="store_true", help="Allow --index-dir to resolve outside --vault after explicit user confirmation")
     args = parser.parse_args()
 
     if args.detect_app:
@@ -425,8 +471,8 @@ def main() -> int:
 
     if args.rebuild_index:
         vault = require_vault(args.vault)
-        rebuild_index(vault, args.date, args.index_dir)
-        idx_dir = index_dir_for(vault, args.index_dir)
+        rebuild_index(vault, args.date, args.index_dir, args.allow_external_index_dir)
+        idx_dir = index_dir_for(vault, args.index_dir, args.allow_external_index_dir)
         print(f"Rebuilt indexes for {vault} in {idx_dir} with date {args.date}.")
 
     if not any([args.detect_app, args.install_app, args.find_vaults, args.check_dates, args.rebuild_index]):

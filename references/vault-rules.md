@@ -164,7 +164,7 @@ Record shape:
 {"date":"2026-07-07","path":"05-职业材料/01-面试准备/01-岗位分析.md","title":"01-岗位分析","area":"05-职业材料","type":"note","status":"active"}
 ```
 
-The filesystem is the source of truth. Rebuild indexes when paths have changed a lot. Rebuilds should overwrite current generated index files, automatically remove stale script-generated index files, and preserve unrelated user-created JSONL files in the same folder. If the user customized the system/index directory, pass the chosen path with `--index-dir`.
+The filesystem is the source of truth. Rebuild indexes when paths have changed a lot. Rebuilds should overwrite current generated index files, automatically remove stale script-generated index files, and preserve unrelated user-created JSONL files in the same folder. If the user customized the system/index directory, pass the chosen path with `--index-dir`. The index directory must resolve inside the vault by default; use `--allow-external-index-dir` only after explicit user confirmation that indexes should be written outside the vault.
 
 ## Routing Reminders
 

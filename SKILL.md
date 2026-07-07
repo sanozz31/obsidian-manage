@@ -167,7 +167,7 @@ python3 /path/to/obsidian-manage/scripts/vault_index.py --vault /path/to/vault -
 python3 /path/to/obsidian-manage/scripts/vault_index.py --vault /path/to/vault --index-dir path/inside/vault --rebuild-index
 ```
 
-`--check-dates` is read-only. `--rebuild-index` rewrites the JSONL index files generated for the current vault under the configured index directory, defaults to `00-系统规则/03-索引文件/`, and automatically removes stale script-generated index files. It must not clear unrelated user-created JSONL files. Use `--index-dir` when the user customized the system/index folder path; explain before running it.
+`--check-dates` is read-only. `--rebuild-index` rewrites the JSONL index files generated for the current vault under the configured index directory, defaults to `00-系统规则/03-索引文件/`, and automatically removes stale script-generated index files. It must not clear unrelated user-created JSONL files. Use `--index-dir` when the user customized the system/index folder path; by default it must resolve inside the vault. Only use `--allow-external-index-dir` after explicit user confirmation that indexes should live outside the vault.
 
 ## Required Formatting
 
