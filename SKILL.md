@@ -45,7 +45,7 @@ python3 /path/to/obsidian-manage/scripts/vault_index.py --find-vaults
 python3 /path/to/obsidian-manage/scripts/vault_index.py --find-vaults --search-root /path/to/search
 ```
 
-`--install-app` is a dry run by default. On macOS, if Obsidian is not installed and `brew` is available, it prints `brew install --cask obsidian`. Add `--yes-install` to actually run that command, after explicit user approval. If Obsidian and Homebrew are both missing, it prints the official download URL: `https://obsidian.md/download` and exits successfully because manual installation guidance is the expected fallback. Do not auto-download DMG files from the website.
+`--install-app` is a dry run by default. On macOS, if Obsidian is not installed and `brew` is available, it prints `brew install --cask obsidian`. Add `--yes-install` to actually run that command, after explicit user approval. If Obsidian and Homebrew are both missing, it prints the official download URL: `https://obsidian.md/download`, tells the user to return to the conversation after manual installation and say "Obsidian is installed", and exits successfully because manual installation guidance is the expected fallback. Do not auto-download DMG files from the website.
 
 ## New Vault vs Existing Vault
 

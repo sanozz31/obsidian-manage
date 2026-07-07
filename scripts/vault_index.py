@@ -160,7 +160,8 @@ def install_obsidian_app(yes_install: bool) -> int:
         print("No automatic Obsidian install command is available.")
         print("If this is macOS, install Homebrew first or install Obsidian manually.")
         print("Official download: https://obsidian.md/download")
-        print("After installing Obsidian, rerun detection.")
+        print('After installing Obsidian, return to the conversation and tell the agent: "Obsidian is installed".')
+        print("The agent should then rerun detection and continue the vault setup flow.")
         return 0
     print("Install command:", " ".join(command))
     if not yes_install:

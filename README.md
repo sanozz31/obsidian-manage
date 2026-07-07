@@ -87,7 +87,7 @@ https://obsidian.md/download
 ```
 
 不会自动从官网下载、挂载或安装 DMG。
-这个分支是正常的人工安装引导，不代表脚本执行失败。
+这个分支是正常的人工安装引导，不代表脚本执行失败。用户人工安装完成后，需要回到对话里告诉 Agent：“Obsidian 已经安装好了”，Agent 再继续下一步检测和建库流程。
 
 ```bash
 python3 scripts/vault_index.py --install-app
